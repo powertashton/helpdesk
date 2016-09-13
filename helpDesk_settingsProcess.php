@@ -35,10 +35,45 @@ $URL = $_SESSION[$guid]["absoluteURL"] . "/index.php?q=/modules/Help Desk/helpDe
 
 if (isActionAccessible($guid, $connection2, "/modules/Help Desk/helpDesk_settings.php") == FALSE) {
     //Fail 0
-    $URL = $URL . "&return=error0" ;
+    $URL .= "&return=error0" ;
     header("Location: {$URL}");
 } else {
 
-}
+    $allowedRIP = array("Everyone", "Related", "Owner", "No one");
+    $notAllowed = false;
 
+    try {
+        $sql = "SELECT name FROM gibbonSetting WHERE scope = 'Help Desk'";
+        $result = $connection2->prepare($sql);
+        $result->execute();
+
+        while ($row = $result->fetch()) {
+            if (isset($_POST[$row["name"]])) {
+                $value = $_POST[$row["name"]];
+                if ($row["name"] == "resolvedIssuePrivacy") {
+                    if (!in_array($value, $allowedRIP)) {
+                        $notAllowed = true;
+                        continue;
+                    }
+                }
+
+                $data2 = array("name" => $row["name"], "value" => $value);
+                $sql2 = "UPDATE gibbonSetting SET value=:value WHERE name=:name AND scope = 'Help Desk'";
+                $result2 = $connection2->prepare($sql2);
+                $result2->execute($data2);
+            }
+        }
+
+        $URL .= "&return=success" . ($notAllowed ? "1" : "0");
+        header("Location: {$URL}");
+        exit();
+    } catch (PDOException $e) {
+        $URL .= "&return=error2";
+        header("Location: {$URL}");
+        exit();
+    }
+
+    header("Location: {$URL}");
+    exit();
+}
 ?>

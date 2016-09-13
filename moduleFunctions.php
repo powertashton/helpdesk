@@ -131,7 +131,7 @@ function getTechnicianGroup($connection2, $groupID)
 {
     try {
         $data = array("groupID" => $groupID);
-        $sql = "SELECT groupName, viewIssue, viewIssueStatus, assignIssue, acceptIssue, resolveIssue, createIssueForOther, fullAccess, reassignIssue, reincarnateIssue FROM helpDeskTechGroup WHERE groupID=:groupID";
+        $sql = "SELECT groupName, viewIssue, viewIssueStatus, assignIssue, acceptIssue, resolveIssue, createIssueForOther, fullAccess, reassignIssue, reincarnateIssue FROM helpDeskTechGroups WHERE groupID=:groupID";
         $result = $connection2->prepare($sql);
         $result->execute($data);
         if ($result->rowCount() == 1) {

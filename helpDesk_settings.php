@@ -43,7 +43,7 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_settin
         if ($dbError) {
             $return = "error2";
         }
-        returnProcess($guid, $return, null, null);
+        returnProcess($guid, $return, null, array("success1" => "Your request was completed successfully, but one of your options was invalid."));
     }
 
     ?>
@@ -84,6 +84,11 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_settin
                     print "</tr>";
                 }
             ?>
+            <tr>
+                <td class='right' colspan=2>
+                    <input type='submit' value='<?php print _('Go') ?>'>
+                </td>
+            </tr>
         </table>
     </form>    
 
