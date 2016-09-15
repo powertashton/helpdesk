@@ -38,19 +38,20 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_issues
     if ($technician != null) {
         $techGroup = getTechnicianGroup($connection2, $technician['groupID']);
     }
+    $data = array();
+    //    $sql = "SELECT helpDeskIssue.issueID, helpDeskIssue.technicianID, helpDeskIssue.gibbonPersonID, helpDeskIssue.issueName, helpDeskIssue.description, helpDeskIssue.date, helpDeskIssue.status, helpDeskIssue.category, helpDeskIssue.priority, helpDeskIssue.gibbonSchoolYearID, helpDeskIssue.createdByID, helpDeskIssue.privacySetting, gibbonPerson.preferredName, gibbonPerson.surname, gibbonPerson.title, gibbonRole.category as nameCategory FROM helpDeskIssue JOIN gibbonPerson ON (helpDeskIssue.gibbonPersonID = gibbonPerson.gibbonPersonID) JOIN gibbonRole ON (gibbonPerson.gibbonRoleIDPrimary = gibbonRole.gibbonRoleID) WHERE";
+    $sql = "SELECT helpDeskIssue.issueID, helpDeskIssue.technicianID, helpDeskIssue.gibbonPersonID, helpDeskIssue.issueName, helpDeskIssue.description, helpDeskIssue.date, helpDeskIssue.status, helpDeskIssue.category, helpDeskIssue.priority, helpDeskIssue.gibbonSchoolYearID, helpDeskIssue.createdByID, helpDeskIssue.privacySetting, gibbonPerson.preferredName, gibbonPerson.surname, gibbonPerson.title FROM helpDeskIssue LEFT JOIN gibbonPerson ON (helpDeskIssue.gibbonPersonID = gibbonPerson.gibbonPersonID) WHERE";
+
     //Relation Filter
     //All Filters: All, Assigned to me, My Issues
     $relationFilters = array();
     $relationFilter = null;
 
     if ($technician != null) {
-        if ($techGroup['fullAccess']) {
-            $relationFilters[""] = "All";
-        }
+        $relationFilters["A"] = "All";
         $relationFilters["AM"] = "Assigned to me";
     }
     $relationFilters["MI"] = "My Issues";
-
 
     $relationFilter = null;
     if (isset($_POST['relationFilter'])) {
@@ -62,6 +63,17 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_issues
 
     if ($relationFilter == null) {
         $relationFilter = array_keys($relationFilters)[0];
+    }
+
+    switch ($relationFilter) {
+        case "MI":
+            $data["gibbonPersonID"] = $_SESSION[$guid]["gibbonPersonID"];
+            $sql .= " helpDeskIssue.gibbonPersonID=:gibbonPersonID AND";
+            break;
+        case "AM":
+            $data["technicianID"] = $technician["technicianID"];
+            $sql .= " helpDeskIssue.technicianID=:technicianID AND";
+            break;
     }
 
     //Status Filter
@@ -101,24 +113,48 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_issues
         $statusFilter = array_keys($statusFilters)[0];
     }
 
+    if ($statusFilter != "") {
+        $sql .= " (";
+
+        if (strpos($statusFilter, "U") !== false) {
+            $data["status0"] = "Unassigned";
+            $sql .= "status=:status0 OR ";
+        }
+
+        if (strpos($statusFilter, "P") !== false) {
+            $data["status1"] = "Pending";
+            $sql .= "status=:status1 OR ";
+        }
+
+        if (strpos($statusFilter, "R") !== false) {
+            $data["status2"] = "Resolved";
+            $sql .= "status=:status2 OR ";
+        }
+
+
+        $sql = substr($sql, 0, -4) . ") AND";
+    }
+
     //Category Filter
     //All Filters: Get from settings
     $categoryFilters = array("All");
     $categoryFilter = null;
 
     try {
-        $sql = "SELECT value FROM gibbonSetting WHERE name = 'issueCategory' AND scope = 'Help Desk'";
-        $result = $connection2->prepare($sql);
-        $result->execute();
-        if ($result->rowCount() == 1) {
-            foreach(explode(",", $result->fetch()['value']) as $category) {
+        $sqlCategory = "SELECT value FROM gibbonSetting WHERE name = 'issueCategory' AND scope = 'Help Desk'";
+        $resultCategory = $connection2->prepare($sqlCategory);
+        $resultCategory->execute();
+        if ($resultCategory->rowCount() == 1) {
+            foreach(explode(",", $resultCategory->fetch()['value']) as $category) {
                 $categoryFilters[] =  $category;
             } 
         }
     } catch (PDOException $e) {
     }
 
-    if (count($categoryFilters) > 0) {
+    $renderCategory = count($categoryFilters) > 1;
+
+    if ($renderCategory) {
         if (isset($_POST["categoryFilter"])) {
             $val = $_POST["categoryFilter"];
             if (in_array($val, $categoryFilters)) {
@@ -131,6 +167,11 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_issues
         }
     }
 
+    if ($categoryFilter != "All") {
+        $data["category"] = $categoryFilter;
+        $sql .= " category=:category AND";
+    }
+
     //Priority Filter
     //All Filters: Get from settings
     $priorityFilters = array("All");
@@ -138,25 +179,27 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_issues
     $priorityName = null;
 
     try {
-        $sql = "SELECT value FROM gibbonSetting WHERE name = 'issuePriority' AND scope = 'Help Desk'";
-        $result = $connection2->prepare($sql);
-        $result->execute();
-        if ($result->rowCount() == 1) {
-            foreach(explode(",", $result->fetch()['value']) as $priority) {
+        $sqlPriority = "SELECT value FROM gibbonSetting WHERE name = 'issuePriority' AND scope = 'Help Desk'";
+        $resultPriority = $connection2->prepare($sqlPriority);
+        $resultPriority->execute();
+        if ($resultPriority->rowCount() == 1) {
+            foreach(explode(",", $resultPriority->fetch()['value']) as $priority) {
                 $priorityFilters[] =  $priority;
             } 
         }
 
-        $sql2 = "SELECT value FROM gibbonSetting WHERE name = 'issuePriorityName' AND scope = 'Help Desk'";
-        $result2 = $connection2->prepare($sql2);
-        $result2->execute();
-        if ($result2->rowCount() == 1) {
-            $priorityName = $result2->fetch()['value'];
+        $sqlPriority1 = "SELECT value FROM gibbonSetting WHERE name = 'issuePriorityName' AND scope = 'Help Desk'";
+        $resultPriority1 = $connection2->prepare($sqlPriority1);
+        $resultPriority1->execute();
+        if ($resultPriority1->rowCount() == 1) {
+            $priorityName = $resultPriority1->fetch()['value'];
         }
     } catch (PDOException $e) {
     }
 
-    if (count($priorityFilters) > 0) {
+    $renderPriority = count($priorityFilters) > 1;
+
+    if ($renderPriority) {
         if (isset($_POST["priorityFilter"])) {
             $val = $_POST["priorityFilter"];
             if (in_array($val, $priorityFilters)) {
@@ -169,6 +212,11 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_issues
         }
     }
 
+    if ($priorityFilter != "All") {
+        $data["priority"] = $priorityFilter;
+        $sql .= " priority=:priority AND";
+    }
+
     //ID Filter
     //Positive Integer inputed by User
     $IDFilter = -1;
@@ -176,20 +224,27 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_issues
     if (isset($_POST['IDFilter'])) {
         $val = intval($_POST['IDFilter']);
         if (gettype($val) == "integer") {
-            $IDFilter = abs($val);
+            if ($val != -1) {
+                $IDFilter = abs($val);
+            }
         }
+    }
+
+    if ($IDFilter >= 0) {
+        $data["issueID"] = $IDFilter;
+        $sql .= " issueID=:issueID AND";
     }
 
     //Year Filter
     //All Filters: Get from gibbonSchoolYear
-    $yearFilters = array();
+    $yearFilters = array("All" => "All");
     $yearFilter = null;
 
     try {
-        $sql = "SELECT gibbonSchoolYearID, name FROM gibbonSchoolYear";
-        $result = $connection2->prepare($sql);
-        $result->execute();
-        while ($row = $result->fetch()) {
+        $sqlYear = "SELECT gibbonSchoolYearID, name FROM gibbonSchoolYear";
+        $resultYear = $connection2->prepare($sqlYear);
+        $resultYear->execute();
+        while ($row = $resultYear->fetch()) {
             $yearFilters[$row['gibbonSchoolYearID']] = $row['name'];
         }
     } catch (PDOException $e) {
@@ -204,6 +259,34 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_issues
 
     if ($yearFilter == null) {
         $yearFilter = $_SESSION[$guid]["gibbonSchoolYearID"];
+    }
+
+    if ($yearFilter != "All") {
+        $data["gibbonSchoolYearID"] = $yearFilter;
+        $sql .= " gibbonSchoolYearID=:gibbonSchoolYearID AND";
+    }
+
+    if (substr($sql, -6) == " WHERE") {
+        $sql = substr($sql, 0, -6);
+    } else {
+        $sql = substr($sql, 0, -4);
+    }
+
+    $sql .= " ORDER BY FIELD(status, 'Unassigned', 'Pending', 'Resolved'), ";
+    if ($renderPriority) {
+        $sql .= "FIELD(priority, ";
+        foreach ($priorityFilters as $priority) {
+            $sql .= "'" . $priority . "',";
+        }
+        $sql = substr($sql, 0, -1) . "), ";
+    }
+    $sql .= "date DESC, issueID DESC";
+
+    try {
+        $result = $connection2->prepare($sql);
+        $result->execute($data);
+    } catch(PDOException $e) {
+        print $e;
     }
 
     print "<form method='post' action='" . $_SESSION[$guid]["absoluteURL"] . "/index.php?q=" . $_GET["q"] . "'>"; ?>
@@ -251,7 +334,7 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_issues
                 </td>
             </tr>
             <?php
-            if (count($categoryFilters) > 0) {
+            if ($renderCategory) {
             ?>
                 <tr>
                     <td> 
@@ -275,11 +358,11 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_issues
             }
             ?>
             <?php
-            if (count($priorityFilters) > 0) {
+            if ($renderPriority) {
             ?>
                 <tr>
                     <td> 
-                        <b><?php echo __($guid, 'Priority Filter') ?> *</b><br/>
+                        <b><?php echo __($guid, $priorityName . ' Filter') ?> *</b><br/>
                     </td>
                     <td class="right">
                         <?php
@@ -331,11 +414,151 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_issues
             </tr>
         </table>
     </form>
+
+    <h3>
+        <?php print __($guid, "Issues"); ?>
+    </h3>
+
+    <div class="linkTop">
+        <a style='position:relative; bottom:10px; float:right;' href='<?php print $_SESSION[$guid]["absoluteURL"] . "/index.php?q=/modules/Help Desk/helpDesk_createIssue.php" ?>'>
+            <?php
+                print __($guid, "Create");
+            ?>
+            <img style='margin-left: -2px' title='<?php print __($guid, "Create") ?>' src='<?php print $_SESSION[$guid]["absoluteURL"] . "/themes/" . $_SESSION[$guid]["gibbonThemeName"] . "/img/page_new.png" ?>'/>
+        </a>
+    </div>
+
+    <table cellspacing = '0' style = 'width: 100% !important'>
+        <tr>
+            <th>
+                <?php print __($guid, "ID") ?>
+            </th>
+            <th>
+                <?php print __($guid, "Title") ?>
+                <br/>
+                <span style='font-size: 85%; font-style: italic'>
+                    <?php print __($guid, "Description") ?>
+                </span>
+            </th>
+            <th>
+                <?php print __($guid, "Owner") ?>
+                <br/>
+                <?php 
+                if ($renderCategory) {
+                ?>
+                    <span style='font-size: 85%; font-style: italic'>
+                        <?php print __($guid, "Category") ?>
+                    </span>
+                <?php
+                }
+                ?>
+            </th>
+            <?php
+            if ($renderPriority) {
+            ?> 
+                <th>
+                    <?php print __($guid, $priorityName) ?>
+                </th>
+            <?php
+            }
+            ?>
+            <th>
+                <?php print __($guid, "Assigned Technician") ?>
+            </th>
+            <th>
+                <?php print __($guid, "Status") ?>
+                <br/>
+                <span style='font-size: 85%; font-style: italic'>
+                    <?php print __($guid, "Date") ?>
+                </span>
+            </th>
+            <th>
+                <?php print __($guid, "Actions") ?>
+            </th>
+        </tr>
+        <?php
+        if ($result->rowCount() > 0) {
+            $maxNameLength = 50;
+            $maxDescriptionLength = 100;
+            while ($row = $result->fetch()) {
+                $class = "even";
+                switch ($row["status"]) {
+                    case "Unassigned":
+                        $class = "error";
+                        break;
+                    case "Pending":
+                        $class = "warning";
+                        break;
+                    case "Resolved":
+                        $class = "success";
+                        break;
+                }
+                ?>
+                <tr class='<?php print $class ?>'>
+                    <td style='text-align: center;'>
+                        <b><?php print intval($row["issueID"]) ?></b>
+                    </td>
+                    <td>
+                        <b>
+                        <?php
+                            $title = $row["issueName"];
+                            if (strlen($title) > $maxNameLength) {
+                                $titleSplit = explode(" ", $title);
+                                $title = "";
+                                $totalLength = 0;
+                                foreach ($titleSplit as $titleBit) {
+                                    if (($totalLength + strlen($titleBit)) > $maxNameLength) {
+                                        $totalLength += strlen($titleBit) + 1;
+                                        $title .= $titleBit . " ";
+                                    }
+                                }
+                                $title = substr($title, 0, -1);
+                            }
+                            print __($guid, $title);
+                        ?> 
+                        </b>
+                        </br>
+                        <span style='font-size: 85%; font-style: italic'>
+                        <?php
+                            $description = strip_tags($row["description"]);
+                            if (strlen($title) > $maxDescriptionLength) {
+                                $descriptionSplit = explode(" ", $description);
+                                $description = "";
+                                $totalLength = 0;
+                                foreach ($descriptionSplit as $descriptionBit) {
+                                    if (($totalLength + strlen($descriptionBit)) > $maxDescriptionLength) {
+                                        $totalLength += strlen($descriptionBit) + 1;
+                                        $description .= $descriptionBit . " ";
+                                    }
+                                }
+                                $description = substr($description, 0, -1);
+                            }
+                            print __($guid, $description);
+                        ?>
+                        </span>
+                    </td>
+                    <td>
+                    <?php
+                        $name = formatName($row['title'], $row['preferredName'], $row['surname'], $row["nameCategory"], FALSE, FALSE);
+                    ?>
+                    </td>
+                </tr>
+                <?php
+            }
+        } else {
+        ?>
+            <tr>
+                <td colspan='<?php print ($renderPriority && $renderCategory ? 7 : ($renderPriority || $renderCategory ? 6 : 5)) ?>'>
+                    <?php print __($guid, "There are no records to display.") ?>
+                </td>
+            </tr>
+        <?php
+        }
+        ?>
+    </table>
+
     <?php
 
-    print "<h3>";
-        print __($guid, "Issues");
-    print "</h3>";
 }
 
 ?>
