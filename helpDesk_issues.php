@@ -35,19 +35,21 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_issues
     print "</h3>";
 
     $technician = getTechnician($connection2, $_SESSION[$guid]["gibbonPersonID"]);
-    if ($technician != null) {
+    $isTech = $technician != null;
+    if ($isTech) {
         $techGroup = getTechnicianGroup($connection2, $technician['groupID']);
+        $fullAccess = $techGroup["fullAccess"];
     }
     $data = array();
-    //    $sql = "SELECT helpDeskIssue.issueID, helpDeskIssue.technicianID, helpDeskIssue.gibbonPersonID, helpDeskIssue.issueName, helpDeskIssue.description, helpDeskIssue.date, helpDeskIssue.status, helpDeskIssue.category, helpDeskIssue.priority, helpDeskIssue.gibbonSchoolYearID, helpDeskIssue.createdByID, helpDeskIssue.privacySetting, gibbonPerson.preferredName, gibbonPerson.surname, gibbonPerson.title, gibbonRole.category as nameCategory FROM helpDeskIssue JOIN gibbonPerson ON (helpDeskIssue.gibbonPersonID = gibbonPerson.gibbonPersonID) JOIN gibbonRole ON (gibbonPerson.gibbonRoleIDPrimary = gibbonRole.gibbonRoleID) WHERE";
-    $sql = "SELECT helpDeskIssue.issueID, helpDeskIssue.technicianID, helpDeskIssue.gibbonPersonID, helpDeskIssue.issueName, helpDeskIssue.description, helpDeskIssue.date, helpDeskIssue.status, helpDeskIssue.category, helpDeskIssue.priority, helpDeskIssue.gibbonSchoolYearID, helpDeskIssue.createdByID, helpDeskIssue.privacySetting, gibbonPerson.preferredName, gibbonPerson.surname, gibbonPerson.title FROM helpDeskIssue LEFT JOIN gibbonPerson ON (helpDeskIssue.gibbonPersonID = gibbonPerson.gibbonPersonID) WHERE";
+    $sql = "SELECT * FROM (SELECT helpDeskIssue.issueID, helpDeskIssue.technicianID, helpDeskIssue.gibbonPersonID, helpDeskIssue.issueName, helpDeskIssue.description, helpDeskIssue.date, helpDeskIssue.status, helpDeskIssue.category, helpDeskIssue.priority, helpDeskIssue.gibbonSchoolYearID, helpDeskIssue.createdByID, helpDeskIssue.privacySetting, gibbonPerson.preferredName, gibbonPerson.surname, gibbonPerson.title, gibbonRole.category as nameCategory FROM helpDeskIssue JOIN gibbonPerson ON (helpDeskIssue.gibbonPersonID = gibbonPerson.gibbonPersonID) JOIN gibbonRole ON (gibbonPerson.gibbonRoleIDPrimary = gibbonRole.gibbonRoleID)";
+    $where = " WHERE";
 
     //Relation Filter
     //All Filters: All, Assigned to me, My Issues
     $relationFilters = array();
     $relationFilter = null;
 
-    if ($technician != null) {
+    if ($isTech) {
         $relationFilters["A"] = "All";
         $relationFilters["AM"] = "Assigned to me";
     }
@@ -68,11 +70,11 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_issues
     switch ($relationFilter) {
         case "MI":
             $data["gibbonPersonID"] = $_SESSION[$guid]["gibbonPersonID"];
-            $sql .= " helpDeskIssue.gibbonPersonID=:gibbonPersonID AND";
+            $where .= " helpDeskIssue.gibbonPersonID=:gibbonPersonID AND";
             break;
         case "AM":
             $data["technicianID"] = $technician["technicianID"];
-            $sql .= " helpDeskIssue.technicianID=:technicianID AND";
+            $where .= " helpDeskIssue.technicianID=:technicianID AND";
             break;
     }
 
@@ -80,9 +82,9 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_issues
     //All Filters: All, Unassigned, Pending, Resolved, Unassigned and Pending, Pending and Resolved
     $statusFilters = array();
     $statusFilter = null;
-    if ($technician != null) {
+    if ($isTech) {
         $viewIssueStatus = $techGroup['viewIssueStatus'];
-        if ($techGroup['fullAccess']) {
+        if ($fullAccess) {
             $viewIssueStatus = "All";
         }
         switch ($viewIssueStatus) {
@@ -114,21 +116,21 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_issues
     }
 
     if ($statusFilter != "") {
-        $sql .= " (";
+        $where .= " (";
 
         if (strpos($statusFilter, "U") !== false) {
             $data["status0"] = "Unassigned";
-            $sql .= "status=:status0 OR ";
+            $where .= "helpDeskIssue.status=:status0 OR ";
         }
 
         if (strpos($statusFilter, "P") !== false) {
             $data["status1"] = "Pending";
-            $sql .= "status=:status1 OR ";
+            $where .= "helpDeskIssue.status=:status1 OR ";
         }
 
         if (strpos($statusFilter, "R") !== false) {
             $data["status2"] = "Resolved";
-            $sql .= "status=:status2 OR ";
+            $where .= "helpDeskIssue.status=:status2 OR ";
         }
 
 
@@ -169,7 +171,7 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_issues
 
     if ($categoryFilter != "All") {
         $data["category"] = $categoryFilter;
-        $sql .= " category=:category AND";
+        $where .= " category=:category AND";
     }
 
     //Priority Filter
@@ -214,7 +216,7 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_issues
 
     if ($priorityFilter != "All") {
         $data["priority"] = $priorityFilter;
-        $sql .= " priority=:priority AND";
+        $where .= " priority=:priority AND";
     }
 
     //ID Filter
@@ -232,7 +234,7 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_issues
 
     if ($IDFilter >= 0) {
         $data["issueID"] = $IDFilter;
-        $sql .= " issueID=:issueID AND";
+        $where .= " issueID=:issueID AND";
     }
 
     //Year Filter
@@ -263,14 +265,23 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_issues
 
     if ($yearFilter != "All") {
         $data["gibbonSchoolYearID"] = $yearFilter;
-        $sql .= " gibbonSchoolYearID=:gibbonSchoolYearID AND";
+        $where .= " gibbonSchoolYearID=:gibbonSchoolYearID AND";
     }
 
-    if (substr($sql, -6) == " WHERE") {
-        $sql = substr($sql, 0, -6);
+    if (substr($where, -6) == " WHERE") {
+        $where = substr($where, 0, -6);
     } else {
-        $sql = substr($sql, 0, -4);
+        $where = substr($where, 0, -4);
     }
+
+    $sql .= $where;
+
+    $sql .= ") as t1 LEFT JOIN (";
+
+    $sql .= "SELECT helpDeskIssue.issueID, gibbonPerson.preferredName as techPrefName, gibbonPerson.surname as techSurname, gibbonPerson.title as techTitle, gibbonRole.category as techNameCategory FROM helpDeskIssue JOIN helpDeskTechnicians ON (helpDeskIssue.technicianID = helpDeskTechnicians.technicianID) JOIN gibbonPerson ON (helpDeskTechnicians.gibbonPersonID = gibbonPerson.gibbonPersonID) JOIN gibbonRole ON (gibbonPerson.gibbonRoleIDPrimary = gibbonRole.gibbonRoleID)";
+
+    $sql .= $where;
+    $sql .= ") as t2 ON (t1.issueID = t2.issueID)";
 
     $sql .= " ORDER BY FIELD(status, 'Unassigned', 'Pending', 'Resolved'), ";
     if ($renderPriority) {
@@ -280,7 +291,7 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_issues
         }
         $sql = substr($sql, 0, -1) . "), ";
     }
-    $sql .= "date DESC, issueID DESC";
+    $sql .= "date DESC, t1.issueID DESC";
 
     try {
         $result = $connection2->prepare($sql);
@@ -297,6 +308,13 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_issues
                 <tr>
                     <td> 
                         <b><?php echo __($guid, 'Relation Filter') ?> *</b><br/>
+                        <span style='font-size: 90%'>
+                            <i>
+                            <?php
+                                print __($guid, "Filter issues by your relation to it.");
+                            ?>
+                            </i>
+                        </span>
                     </td>
                     <td class="right">
                         <?php
@@ -402,6 +420,13 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_issues
             <tr>
                 <td>
                     <b><?php echo __($guid, "ID Filter") ?></b><br/>
+                    <span style='font-size: 90%'>
+                        <i>
+                        <?php
+                            print __($guid, "Filter issue by their unique ID. Set to -1 to disable the filter.");
+                        ?>
+                        </i>
+                    </span>
                 </td>
                 <td class="right">
                     <input type='text' value='<?php echo $IDFilter ?>' id='IDFilter' name='IDFilter' style='width: 300px'>
@@ -537,9 +562,173 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_issues
                         ?>
                         </span>
                     </td>
-                    <td>
+                    <td style="width:15%">
+                        <b>
+                        <?php
+                            $name = formatName($row['title'], $row['preferredName'], $row['surname'], $row["nameCategory"], FALSE, FALSE);
+                            print $name;
+                        ?>
+                        </b>
+                        <?php 
+                        if ($renderCategory) {
+                        ?>
+                            <br/>
+                            <span style='font-size: 85%; font-style: italic'>
+                            <?php
+                                print $row["category"];
+                            ?>
+                            </span>
+                        <?php
+                        }
+                        ?>
+                    </td>
+                    <?php 
+                    if ($renderPriority) {
+                    ?>
+                        <td>
+                            <b>
+                            <?php
+                                print $row["priority"];
+                            ?>
+                            </b>
+                        </td>
                     <?php
-                        $name = formatName($row['title'], $row['preferredName'], $row['surname'], $row["nameCategory"], FALSE, FALSE);
+                    }
+                    ?>
+                    <td style="width:15%">
+                        <b>
+                        <?php
+                            if (isset($row['technicianID'])) {
+                                $name = formatName($row['techTitle'], $row['techPrefName'], $row['techSurname'], $row["techNameCategory"], FALSE, FALSE);
+                                print $name;
+                            }
+                        ?>
+                        </b>
+                    </td>
+                    <td style='width:10%;'>
+                        <b>
+                        <?php
+                            print $row["status"];
+                        ?>
+                        </b>
+                        <br/>
+                        <span style='font-size: 85%; font-style: italic'>
+                        <?php
+                            print $row["date"];
+                        ?>
+                        </span>
+                    </td>
+                    <td style='width:17%'>
+                    <?php
+                        //View, Edit, Assign/Reassign, Accept, Resolve, Reincarnate
+                        $createView = false;
+                        $createEdit = false;
+                        $createAssign = false;
+                        $createReassign = false;
+                        $createAccept = false;
+                        $createResolve = false;
+                        $createReincarnate = false;
+
+                        $isOwner = $row["gibbonPersonID"] == $_SESSION[$guid]["gibbonPersonID"];            
+
+                        if ($row["status"] == "Unassigned") {
+                            //View if: Owner or tech with permission
+                            $createView = $isOwner;
+
+                            if (!$createView && $isTech) {
+                                $createView = $techGroup["viewIssue"] || $fullAccess;
+                            }
+
+                            //Edit if: Owner or tech with full access
+                            $createEdit = $isOwner;
+
+                            if (!$createEdit && $isTech) {
+                                $createEdit = $fullAccess;
+                            }
+
+                            //Assign if: tech with permission
+                            if ($isTech) {
+                                $createAssign = $techGroup["assignIssue"] || $fullAccess;
+                            }
+
+                            //Accept if: tech with permission and not Owner
+                            if ($isTech && !$isOwner) {
+                                $createAccept = $techGroup["acceptIssue"] || $fullAccess;
+                            }
+
+                            //Resolve if: Owner or tech with full access
+                            $createResolve = $isOwner;
+
+                            if (!$createResolve && $isTech) {
+                                $createResolve = $fullAccess;
+                            }
+                        } elseif ($row["status"] == "Pending") {
+                            $assignedTech = false;
+                            if ($isTech) {
+                                $assignedTech = $row["technicianID"] == $technician["technicianID"];
+                            }
+
+                            //View if: Owner or assigned tech or tech with full access
+                            $createView = $isOwner || $assignedTech;
+
+                            if (!$createView && $isTech) {
+                                $createView = $fullAccess;
+                            }
+
+                            //Edit if: Owner or tech with full access
+                            $createEdit = $isOwner;
+
+                            if(!$createEdit && $isTech) {
+                                $createEdit = $fullAccess;
+                            }
+
+                            //Reassign if: tech with permission
+                            if ($isTech) {
+                                $createReassign = $techGroup["reassignIssue"] || $fullAccess;
+                            }
+
+                            //Resolve if: Owner or assigned tech or tech with full acccess
+                            $createResolve = $isOwner || $assignedTech;
+
+                            if (!$createResolve && $isTech) {
+                                $createResolve = $fullAccess;
+                            }
+                        } elseif ($row["status"] == "Resolved") {
+                            //View if: check privacy
+                            $createView = $fullAccess || ($row["privacySetting"] == "Owner" && $isOwner) || ($row["privacySetting"] == "Related" && ($isOwner || $assignedTech)) || $row["privacySetting"] == "Everyone";
+
+                            //Reincarnate, if: Owner or tech with permission
+                            $createReincarnate = $isOwner;
+
+                            if (!$createReincarnate && $isTech) {
+                                $createReincarnate = $techGroup["reincarnateIssue"] || $fullAccess;
+                            }
+                        }
+
+                        if ($createView) {
+                            print "<a href='" . $_SESSION[$guid]["absoluteURL"] . "/index.php?q=/modules/" . $_SESSION[$guid]["module"] . "/helpDesk_issueDiscuss.php&issueID=". intval($row["issueID"]) . "'><img style='margin-left: 5px' title='" . __($guid, 'Open') . "' src='" . $_SESSION[$guid]["absoluteURL"] . "/themes/" . $_SESSION[$guid]["gibbonThemeName"] . "/img/zoom.png'/></a>"; 
+                        }
+
+                        if ($createEdit) {
+                            print "<a href='" . $_SESSION[$guid]["absoluteURL"] . "/index.php?q=/modules/" . $_SESSION[$guid]["module"] . "/helpDesk_issueEdit.php&issueID=". intval($row["issueID"]) . "'><img style='margin-left: 5px' title='" . __($guid, 'Edit') . "' src='" . $_SESSION[$guid]["absoluteURL"] . "/themes/" . $_SESSION[$guid]["gibbonThemeName"] . "/img/config.png'/></a>"; 
+                        }
+
+                        if ($createAssign || $createReassign) {
+                            print "<a href='" . $_SESSION[$guid]["absoluteURL"] . "/index.php?q=/modules/" . $_SESSION[$guid]["module"] . "/helpDesk_issueAssign.php&issueID=". intval($row["issueID"]) . "'><img style='margin-left: 5px' title='" . __($guid, ($createAssign ? "Assign" : "Reassign")) . "' src='" . $_SESSION[$guid]["absoluteURL"] . "/themes/" . $_SESSION[$guid]["gibbonThemeName"] . "/img/attendance.png'/></a>"; 
+                        }
+
+                        if ($createAccept) {
+                            print "<a href='" . $_SESSION[$guid]["absoluteURL"] . "/index.php?q=/modules/" . $_SESSION[$guid]["module"] . "/helpDesk_issueAcceptProcess.php&issueID=". intval($row["issueID"]) . "'><img style='margin-left: 5px' title='" . __($guid, 'Accept') . "' src='" . $_SESSION[$guid]["absoluteURL"] . "/themes/" . $_SESSION[$guid]["gibbonThemeName"] . "/img/page_new.png'/></a>"; 
+                        }
+
+                        if ($createResolve) {
+                            print "<a href='" . $_SESSION[$guid]["absoluteURL"] . "/index.php?q=/modules/" . $_SESSION[$guid]["module"] . "/helpDesk_issueResolveProcess.php&issueID=". intval($row["issueID"]) . "'><img style='margin-left: 5px' title='" . __($guid, 'Resolve') . "' src='" . $_SESSION[$guid]["absoluteURL"] . "/themes/" . $_SESSION[$guid]["gibbonThemeName"] . "/img/iconTick.png'/></a>"; 
+                        }
+
+                        if ($createReincarnate) {
+                            print "<a href='" . $_SESSION[$guid]["absoluteURL"] . "/index.php?q=/modules/" . $_SESSION[$guid]["module"] . "/helpDesk_issueReincarnateProcess.php&issueID=". intval($row["issueID"]) . "'><img style='margin-left: 5px' title='" . __($guid, 'Reincarnate') . "' src='" . $_SESSION[$guid]["absoluteURL"] . "/themes/" . $_SESSION[$guid]["gibbonThemeName"] . "/img/reincarnate.png'/></a>"; 
+                        }
+
                     ?>
                     </td>
                 </tr>
