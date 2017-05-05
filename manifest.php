@@ -60,7 +60,7 @@ $moduleTables[2] = "CREATE TABLE `helpDeskIssueDiscuss` (
   PRIMARY KEY (`issueDiscussID`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;";
 
-$moduleTables[3] = "INSERT INTO `gibbonSetting` (`gibbonSystemSettingsID`, `scope`, `name`, `nameDisplay`, `description`, `value`)
+$moduleTables[3] = "INSERT INTO `gibbonSetting` (`gibbonSettingID`, `scope`, `name`, `nameDisplay`, `description`, `value`)
 VALUES
 (NULL, 'Help Desk', 'issuePriority', 'Issue Priority', 'Different priority levels for the issues.', ''),
 (NULL, 'Help Desk', 'issuePriorityName', 'Issue Priority Name', 'Different name for the Issue Priority', 'Priority'),

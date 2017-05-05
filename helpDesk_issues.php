@@ -19,6 +19,8 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 @session_start();
 
+use Gibbon\Forms\Form;
+
 include "./modules/Help Desk/moduleFunctions.php";
 
 if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_issues.php')) {
@@ -299,6 +301,43 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_issues
     } catch(PDOException $e) {
         print $e;
     }
+
+    $form = Form::create('issueFilters', $_SESSION[$guid]["absoluteURL"] . "/index.php?q=" . $_GET["q"]);
+
+    if (count($relationFilters) > 0) {
+        $row = $form->addRow();
+            $row->addLabel("relationFilterLabel", "Relation Filter")->description("Filter issues by your relation to it.");
+            $row->addSelect("relationFilter")->fromArray($relationFilters);
+    }
+
+    $row = $form->addRow();
+            $row->addLabel("statusFilterLabel", "Status Filter");
+            $row->addSelect("statusFilter")->fromArray($statusFilters);
+
+    if ($renderCategory) {
+        $row = $form->addRow();
+            $row->addLabel("categoryFilterLabel", "Category Filter");
+            $row->addSelect("categoryFilter")->fromArray($categoryFilters);
+    }
+
+    if($renderPriority) {
+        $row = $form->addRow();
+            $row->addLabel("priorityFilterLabel", "Priority Filter");
+            $row->addSelect("priorityFilter")->fromArray($priorityFilters);
+    }
+
+    $row = $form->addRow();
+            $row->addLabel("yearFilterLabel", "Year Filter");
+            $row->addSelect("yearFilter")->fromArray($yearFilters);
+
+    $row = $form->addRow();
+            $row->addLabel("IDFilterLabel", "ID Filter")->description("Filter issue by their unique ID. Set to -1 to disable the filter.");
+            $row->addNumber("IDFilter");
+
+    $row = $form->addRow();
+        $row->addSubmit();
+
+    echo $form->getOutput();
 
     print "<form method='post' action='" . $_SESSION[$guid]["absoluteURL"] . "/index.php?q=" . $_GET["q"] . "'>"; ?>
         <table class='noIntBorder' cellspacing='0' style='width: 100%'>
