@@ -19,7 +19,9 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 @session_start();
 
-if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_settings.php')) {
+use Gibbon\Forms\Form;
+
+if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_createIssue.php')) {
     print "<div class='error'>";
         print "You do not have access to this action.";
     print "</div>";
@@ -27,26 +29,6 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_settin
     print "<div class='trail'>" ;
         print "<div class='trailHead'><a href='" . $_SESSION[$guid]["absoluteURL"] . "'>" . __($guid, "Home") . "</a> > <a href='" . $_SESSION[$guid]["absoluteURL"] . "/index.php?q=/modules/" . getModuleName($_GET["q"]) . "/" . getModuleEntry($_GET["q"], $connection2, $guid) . "'>" . __($guid, getModuleName($_GET["q"])) . "</a> > </div><div class='trailEnd'>" . __($guid, 'Create Issue') . "</div>" ;
     print "</div>" ;
-
-    $dbError = false;
-
-    try {
-        $sql = "SELECT name, value FROM gibbonSetting WHERE scope = 'Help Desk'";
-        $result = $connection2->prepare($sql);
-        $result->execute();
-        $categories = array();
-        $priorities = array();
-        $priorityName = null;
-        while ($row = $result->fetch()) {
-            if ($row["name"] == "issuePriority" || $row["name"] == "issueCategory") {
-                ${($row["name"] == "issuePriority" ? "priorities" : "categories")} = explode(",", $row["value"]);
-            } elseif ($row["name"] == "issuePriorityName") {
-                $priorityName = $row["value"];
-            }
-        }
-    } catch (PDOException $e) {
-        $dbError = true;
-    }
     
     if (isset($_GET['return'])) {
         $editLink = "";
@@ -54,13 +36,30 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_settin
             $editLink = $_SESSION[$guid]["absoluteURL"] . "/index.php?q=modules/Help Desk/helpDesk_issueDiscuss.php&issueID=" . $_GET["issueID"];
         }
         returnProcess($guid, $_GET["return"], $editLink, null);
-    } elseif ($dbError) {  
-        returnProcess($guid, "error2", null, null);
     }
 
-    if (!$dbError) {
-    ?>
-        <form method="post" action="<?php print $_SESSION[$guid]["absoluteURL"] . "/modules/Help Desk/helpDesk_createIssueProcess.php" ?>">
+    $form = Form::create('issueFilters', $_SESSION[$guid]["absoluteURL"] . "/index.php?q=" . $_GET["q"]);
+
+    $row = $form->addRow();
+        $row->addLabel("issueNameLabel", "Issue Name *");
+        $row->addTextField("issueName")->maxlength(55)->setRequired(true);
+
+    $row = $form->addRow();
+        $column = $row->addColumn()->setClass('');
+        $column->addLabel("descriptionLabel", "Description *");
+        $column->addEditor("description", $guid)->setRequired(true)->showMedia(true)->setRows(10);
+
+    $row = $form->addRow();
+        $row->addFooter();
+        $row->addSubmit();
+
+
+    print $form->getOutput();
+
+}
+?>
+
+<!-- <form method="post" action="<?php print $_SESSION[$guid]["absoluteURL"] . "/modules/Help Desk/helpDesk_createIssueProcess.php" ?>">
             <table class='smallIntBorder' cellspacing='0' style="width: 100%">
                 <tr>
                     <td>
@@ -91,10 +90,4 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_settin
                     </td>
                 </tr>
             </table>
-        </form>    
-
-    <?php
-    }
-}
-
-?>
+        </form>  --> 

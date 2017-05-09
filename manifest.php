@@ -91,21 +91,21 @@ VALUES
 //One array per action
 $actionCount = 0;
 
-$actionRows[$actionCount]["name"] = "Create Issue"; //The name of the action (appears to user in the right hand side module menu)
-$actionRows[$actionCount]["precedence"] = "0"; //If it is a grouped action, the precedence controls which is highest action in group
-$actionRows[$actionCount]["category"] = "Issues"; //Optional: subgroups for the right hand side module menu
-$actionRows[$actionCount]["description"] = "Allows the user to submit an issue to be resolved by the help desk staff."; //Text description
+$actionRows[$actionCount]["name"] = "Create Issue";
+$actionRows[$actionCount]["precedence"] = "0";
+$actionRows[$actionCount]["category"] = "Issues";
+$actionRows[$actionCount]["description"] = "Allows the user to submit an issue to be resolved by the help desk staff.";
 $actionRows[$actionCount]["URLList"] = "helpDesk_createIssue.php";
 $actionRows[$actionCount]["entryURL"] = "helpDesk_createIssue.php";
-$actionRows[$actionCount]["defaultPermissionAdmin"] = "Y"; //Default permission for built in role Admin
-$actionRows[$actionCount]["defaultPermissionTeacher"] = "Y"; //Default permission for built in role Teacher
-$actionRows[$actionCount]["defaultPermissionStudent"] = "Y"; //Default permission for built in role Student
-$actionRows[$actionCount]["defaultPermissionParent"] = "N"; //Default permission for built in role Parent
-$actionRows[$actionCount]["defaultPermissionSupport"] = "Y"; //Default permission for built in role Support
-$actionRows[$actionCount]["categoryPermissionStaff"] = "Y"; //Should this action be available to user roles in the Staff category?
-$actionRows[$actionCount]["categoryPermissionStudent"] = "Y"; //Should this action be available to user roles in the Student category?
-$actionRows[$actionCount]["categoryPermissionParent"] = "Y"; //Should this action be available to user roles in the Parent category?
-$actionRows[$actionCount++]["categoryPermissionOther"] = "Y"; //Should this action be available to user roles in the Other category?
+$actionRows[$actionCount]["defaultPermissionAdmin"] = "Y"; 
+$actionRows[$actionCount]["defaultPermissionTeacher"] = "Y";
+$actionRows[$actionCount]["defaultPermissionStudent"] = "Y";
+$actionRows[$actionCount]["defaultPermissionParent"] = "N";
+$actionRows[$actionCount]["defaultPermissionSupport"] = "Y";
+$actionRows[$actionCount]["categoryPermissionStaff"] = "Y";
+$actionRows[$actionCount]["categoryPermissionStudent"] = "Y";
+$actionRows[$actionCount]["categoryPermissionParent"] = "Y";
+$actionRows[$actionCount++]["categoryPermissionOther"] = "Y";
 
 $actionRows[$actionCount]["name"] = "Issues";
 $actionRows[$actionCount]["precedence"] = "0";

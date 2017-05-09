@@ -55,6 +55,14 @@ if (isActionAccessible($guid, $connection2, "/modules/Help Desk/helpDesk_setting
                         $notAllowed = true;
                         continue;
                     }
+                } else if ($row["name"] == "issueCategory" || $row["name"] == "issuePriority") {
+                    $tempVal = "";
+                    foreach(explode(",", $value) as $split) {
+                        if($split != "" || $split != null) {
+                            $tempVal .= trim($split) . ",";
+                        }
+                    }
+                    $value = substr($tempVal, 0, -1);
                 }
 
                 $data2 = array("name" => $row["name"], "value" => $value);

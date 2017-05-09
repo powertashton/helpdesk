@@ -154,4 +154,66 @@ Returns:
 
 //-Help Desk Functions-
 
+/*
+Description: THis function retunrs a formatted value of a Help Desk Setitng, when given the name of the setting.
+Arguments:
+    A PDO connection.
+    The name of the Help Desk setting.
+Returns:
+    An array: If the setting is either issuePriority or issueCategory.
+    A string: If the setting is any other valid setting name.
+    null: If the setting name is invalid, a database error occured, or the setting has no value.
+*/
+function getHelpDeskSetting($connection2, $setting) {
+    $return = null;
+
+    try {
+        $data = array("name" => $setting);
+        $sql = "SELECT value FROM gibbonSetting WHERE name =:name AND scope = 'Help Desk'";
+        $result = $connection2->prepare($sql);
+        $result->execute($data);
+
+        $return = $result->fetch()["value"];
+
+        if ($return == "") {
+            return null;
+        }
+
+        if ($setting == "issuePriority" || $setting == "issueCategory") {
+            foreach(explode(",", $return) as $split) {
+                if($split != "" || $split != null) {
+                    $splits[] =  $split;
+                }
+            }
+            $return = $splits;
+        }
+    } catch (PDOException $e) {
+    }
+    return $return;
+}
+
+//-Miscellaneous Functions-
+
+/*
+Description: This function will truncate a string by seperating the string into words and rebuilding the string until the max length is exceeded.
+Arguments:
+    A string
+    An integer
+Returns:
+    A string
+*/
+
+function smartTruncate($string, $maxLength) {
+    $stringSplit = explode(" ", $string);
+    $string = "";
+    $totalLength = 0;
+    foreach ($stringSplit as $stringBit) {
+        if (($totalLength + strlen($stringBit)) > $maxLength) {
+            $totalLength += strlen($stringBit) + 1;
+            $string .= $stringBit . " ";
+        }
+    }
+    return substr($string, 0, -1);
+}
+
 ?>
