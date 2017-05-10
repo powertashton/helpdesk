@@ -163,8 +163,6 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_issues
         $renderCategory = false;
     }
 
-    print_r($categoryFilters);
-
     if ($categoryFilter != "All") {
         $data["category"] = $categoryFilter;
         $where .= " helpDeskIssue.category=:category AND";
@@ -176,9 +174,7 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_issues
     $priorityFilter = null;
     $priorityName = null;
 
-    if(($priorityName = getHelpDeskSetting($connection2, "issuePriorityName")) != null) {
-        $renderPriority = true;
-    }
+    $renderPriority = (($priorityName = getHelpDeskSetting($connection2, "issuePriorityName")) != null);
 
     if (($priorityFilters = getHelpDeskSetting($connection2, "issuePriority")) != null && $renderPriority) {
         $renderPriority = count($categoryFilters) > 1;
@@ -197,7 +193,7 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_issues
         }
     } else {
         $renderPriority = false;
-    } 
+    }
 
     if ($priorityFilter != "All") {
         $data["priority"] = $priorityFilter;

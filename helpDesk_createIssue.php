@@ -19,6 +19,8 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 @session_start();
 
+include "./modules/Help Desk/moduleFunctions.php";
+
 use Gibbon\Forms\Form;
 
 if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_createIssue.php')) {
@@ -38,6 +40,12 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_create
         returnProcess($guid, $_GET["return"], $editLink, null);
     }
 
+    $technician = getTechnician($connection2, $_SESSION[$guid]["gibbonPersonID"]);
+    $isTech = $technician != null;
+    if ($isTech) {
+        $techGroup = getTechnicianGroup($connection2, $technician['groupID']);
+    }
+
     $form = Form::create('issueFilters', $_SESSION[$guid]["absoluteURL"] . "/index.php?q=" . $_GET["q"]);
 
     $row = $form->addRow();
@@ -49,10 +57,60 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_create
         $column->addLabel("descriptionLabel", "Description *");
         $column->addEditor("description", $guid)->setRequired(true)->showMedia(true)->setRows(10);
 
+    $categories = array();
+    $renderCategory = false;
+
+    if (($categories = getHelpDeskSetting($connection2, "issueCategory")) != null) {
+        $renderCategory = count($categories) > 1;
+    }
+
+    if($renderCategory) {
+        $row = $form->addRow();
+            $row->addLabel("categoryLabel", "Category *");
+            $row->addSelect("category")->fromArray($categories)->setRequired(true)->placeholder("Please Select...");
+    }   
+    $priorities = array();
+    $priorityName = null;
+    $renderPriority = (($priorityName = getHelpDeskSetting($connection2, "issuePriorityName")) != null);
+
+    if (($priorities = getHelpDeskSetting($connection2, "issuePriority")) != null && $renderPriority) {
+        $renderPriority = count($priorities) > 1;
+    }
+
+    if ($renderPriority) {
+        $row = $form->addRow();
+            $row->addLabel("priorityLabel", "Priority *");
+            $row->addSelect("priority")->fromArray($priorities)->setRequired(true)->placeholder("Please Select...");
+    }
+
+    if ($isTech && ($techGroup["createIssueForOther"] || $techGroup["fullAccess"])) {
+        try {
+           $sqlSelect = "SELECT gibbonPerson.gibbonPersonID, surname, preferredName FROM gibbonPerson JOIN gibbonStaff ON (gibbonPerson.gibbonPersonID=gibbonStaff.gibbonPersonID) WHERE status='Full' ORDER BY surname, preferredName";
+           $resultSelect = $connection2->prepare($sqlSelect);
+           $resultSelect->execute();
+        } catch (PDOException $e) {
+        }
+
+        $staff = array();
+
+        while ($rowSelect = $resultSelect->fetch()) {
+            if ($rowSelect['gibbonPersonID'] != $_SESSION[$guid]["gibbonPersonID"]) {
+                $staff[$rowSelect['gibbonPersonID']] = formatName("", htmlPrep($rowSelect['preferredName']), htmlPrep($rowSelect['surname']), 'Staff', true, true);
+            }
+        }
+
+        $row = $form->addRow();
+            $row->addLabel("createForLabel", "Create For");
+            $row->addSelect("createFor")->fromArray($staff)->placeholder("Optionally Select...");
+    }
+
+    $row = $form->addRow();
+        $row->addLabel("privacyLabel", "Privacy Setting *");
+        $row->addSelect("privacySetting")->fromArray(array("Everyone", "Related", "Owner", "No One"));
+
     $row = $form->addRow();
         $row->addFooter();
         $row->addSubmit();
-
 
     print $form->getOutput();
 

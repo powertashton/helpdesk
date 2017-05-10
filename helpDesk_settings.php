@@ -19,6 +19,8 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 @session_start();
 
+use Gibbon\Forms\Form;
+
 if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_settings.php')) {
     print "<div class='error'>";
         print "You do not have access to this action.";
@@ -45,55 +47,27 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_settin
         }
         returnProcess($guid, $return, null, array("success1" => "Your request was completed successfully, but one of your options was invalid."));
     }
-    //TODO: Replace with Form Class 
-    ?>
 
-    <form method="post" action="<?php print $_SESSION[$guid]["absoluteURL"] . "/modules/Help Desk/helpDesk_settingsProcess.php" ?>">
-        <table class='smallIntBorder' cellspacing='0' style="width: 100%">
-            <?php
-                while ($row = $result->fetch()) {
-                    print "<tr>";
-                        print "<td style='width:275px'>";
-                            print "<b>" . __($guid, $row["nameDisplay"]) . "</b><br/>";
-                            if ($row["description"] != "") {
-                                print "<span style='font-size: 90%''><i>" . __($guid, $row["description"]) . "</i></span>";
-                            }
-                        print "</td>";
-                        print "<td class='right'>";
-                            if ($row['name'] == "issuePriorityName") {
-                                print "<input name='" . $row["name"] . "' id='" . $row["name"] . "' maxlength=100 value='" . $row["value"] . "' type='text' data-minlength='1' style='width: 300px'></input>";
-                                print "<script type='text/javascript'>";
-                                    print "var priorityName = new LiveValidation('issuePriorityName');";
-                                    print "priorityName.add(Validate.Presence);";
-                                print "</script>";
-                            } elseif ($row['name'] == "issuePriority" || $row['name'] == "issueCategory") {
-                                print "<textarea name='" . $row["name"] . "' id='" . $row["name"] . "' rows=4 type='text' style='width: 300px'>" . $row["value"] . "</textarea>";
-                            } elseif ($row['name'] == "resolvedIssuePrivacy") {
-                                print "<select name='".  $row["name"] . "' id='" . $row["name"] . "' style='width:302px'>";
-                                    $options = array("Everyone", "Related", "Owner", "No one");
-                                    foreach ($options as $option) {
-                                        $selected = "";
-                                        if ($option == $row["value"]) {
-                                            $selected = "selected";
-                                        }
-                                        print "<option $selected value='" . $option . "'>". $option ."</option>" ;
-                                    }
-                                print "</select>";
-                            }
-                        print "</td>";
-                    print "</tr>";
-                }
-            ?>
-            <tr>
-                <td class='right' colspan=2>
-                    <input type='submit' value='<?php print _('Go') ?>'>
-                </td>
-            </tr>
-        </table>
-    </form>    
+    $form = Form::create("helpDeskSettings", $_SESSION[$guid]["absoluteURL"] . "/modules/Help Desk/helpDesk_settingsProcess.php");
 
-    <?php
+    while ($row = $result->fetch()) {
+        $fRow = $form->addRow();
+            $fRow->addLabel($row["name"] . "Label", $row["nameDisplay"])->description($row["description"]);
+            
+            if ($row['name'] == "issuePriorityName") {
+                $fRow->addTextField($row["name"])->maxlength(100);
+            } elseif ($row['name'] == "issuePriority" || $row['name'] == "issueCategory") {
+                $fRow->addTextArea($row["name"])->setRows(4)->setValue($row["value"]);
+            } elseif ($row['name'] == "resolvedIssuePrivacy") {
+                $fRow->addSelect($row["name"])->fromArray(array("Everyone", "Related", "Owner", "No one"))->selected($row["value"])->setRequired(true);
+            }
+    }
 
+    $fRow = $form->addRow();
+        $fRow->addFooter();
+        $fRow->addSubmit();
+
+    print $form->getOutput();
 }
 
 ?>

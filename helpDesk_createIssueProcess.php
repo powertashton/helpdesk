@@ -31,49 +31,28 @@ $connection2 = $pdo->getConnection();
 //Set timezone from session variable
 date_default_timezone_set($_SESSION[$guid]["timezone"]);
 
-$URL = $_SESSION[$guid]["absoluteURL"] . "/index.php?q=/modules/Help Desk/helpDesk_settings.php" ;
+$URL = $_SESSION[$guid]["absoluteURL"] . "/index.php?q=/modules/Help Desk/" ;
 
-if (isActionAccessible($guid, $connection2, "/modules/Help Desk/helpDesk_settings.php") == FALSE) {
+if (isActionAccessible($guid, $connection2, "/modules/Help Desk/helpDesk_createIssue.php") == FALSE) {
     //Fail 0
-    $URL .= "&return=error0" ;
+    $URL .= "helpDesk_manage.php&return=error0" ;
     header("Location: {$URL}");
 } else {
+    $URL .= "helpDesk_createIssue.php";
 
-    // $allowedRIP = array("Everyone", "Related", "Owner", "No one");
-    // $notAllowed = false;
+    
 
-    // try {
-    //     $sql = "SELECT name FROM gibbonSetting WHERE scope = 'Help Desk'";
-    //     $result = $connection2->prepare($sql);
-    //     $result->execute();
+    try {
+        $data = array("gibbonPersonID" => $gibbonPersonID, "name" => $issueName, "description" => $description, "category" => $category, "priority" => $priority, $gibbonSchoolYearID=> $_SESSION[$guid]["gibbonSchoolYearID"], "createdByID" => $createdByID, "privacySetting" => $privacySetting, "date" => date("Y-m-d"));
+        $sql = "INSERT INTO helpDeskIssue SET gibbonPersonID=:gibbonPersonID, issueName=:name, description=:description, category=:category, priority=:priority, gibbonSchoolYearID=:gibbonSchoolYearID, createdByID=:createdByID, privacySetting=:privacySetting, `date`=:date";
+        $result = $connection2->prepare($sql);
+        $result->execute($sql);
+        $issueID = $connection2->lastInsertId();
+    } catch(PDOException $e) {
+    }
 
-    //     while ($row = $result->fetch()) {
-    //         if (isset($_POST[$row["name"]])) {
-    //             $value = $_POST[$row["name"]];
-    //             if ($row["name"] == "resolvedIssuePrivacy") {
-    //                 if (!in_array($value, $allowedRIP)) {
-    //                     $notAllowed = true;
-    //                     continue;
-    //                 }
-    //             }
-
-    //             $data2 = array("name" => $row["name"], "value" => $value);
-    //             $sql2 = "UPDATE gibbonSetting SET value=:value WHERE name=:name AND scope = 'Help Desk'";
-    //             $result2 = $connection2->prepare($sql2);
-    //             $result2->execute($data2);
-    //         }
-    //     }
-
-    //     $URL .= "&return=success" . ($notAllowed ? "1" : "0");
-    //     header("Location: {$URL}");
-    //     exit();
-    // } catch (PDOException $e) {
-    //     $URL .= "&return=error2";
-    //     header("Location: {$URL}");
-    //     exit();
-    // }
-
-    // header("Location: {$URL}");
-    // exit();
+    $URL .="&return=success0&issueID=";
+    header("Location: {$URL}");
+    exit();
 }
 ?>
