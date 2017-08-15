@@ -55,7 +55,7 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_settin
             $fRow->addLabel($row["name"] . "Label", $row["nameDisplay"])->description($row["description"]);
             
             if ($row['name'] == "issuePriorityName") {
-                $fRow->addTextField($row["name"])->maxlength(100);
+                $fRow->addTextField($row["name"])->maxlength(100)->setValue($row["value"]);
             } elseif ($row['name'] == "issuePriority" || $row['name'] == "issueCategory") {
                 $fRow->addTextArea($row["name"])->setRows(4)->setValue($row["value"]);
             } elseif ($row['name'] == "resolvedIssuePrivacy") {

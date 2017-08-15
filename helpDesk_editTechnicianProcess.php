@@ -33,43 +33,51 @@ date_default_timezone_set($_SESSION[$guid]["timezone"]);
 
 $URL = $_SESSION[$guid]["absoluteURL"] . "/index.php?q=/modules/Help Desk/" ;
 
-if (isActionAccessible($guid, $connection2, "/modules/Help Desk/helpDesk_createIssue.php") == FALSE) {
+if (isActionAccessible($guid, $connection2, "/modules/Help Desk/helpDesk_manageTechnicians.php") == FALSE) {
     //Fail 0
     $URL .= "helpDesk_manage.php&return=error0" ;
     header("Location: {$URL}");
 } else {
-    $URL .= "helpDesk_createIssue.php";
-
-    $data = array("gibbonPersonID" => $_SESSION[$guid]["gibbonPersonID"], "gibbonSchoolYearID" => $_SESSION[$guid]["gibbonSchoolYearID"], "date" => date("Y-m-d"), "createdByID" => $_SESSION[$guid]["gibbonPersonID"]);
-    $formData = array("issueName" => true, "description"=>true, "category" => false, "priority" => false, "createFor" => false, "privacySetting" => true);
-
-    foreach ($formData as $key => $value) {
-        if (isset($_POST[$key]) && trim($_POST[$key])!=="") {
-            if($key == "createFor") {
-                $data["createdByID"] = $data["gibbonPersonID"];
-                $data["gibbonPersonID"] = trim($_POST[$zkey]);
-            } else {
-                $data[$key] = trim($_POST[$key]);
-            }
-        } else if($value) {
-            $URL .= "&return=error1";
-            header("Location: {$URL}");
-            exit();
-        }
-    }
-
-    try {
-        $sql = "INSERT INTO helpDeskIssue SET gibbonPersonID=:gibbonPersonID, issueName=:issueName, description=:description, category=:category, priority=:priority, gibbonSchoolYearID=:gibbonSchoolYearID, createdByID=:createdByID, privacySetting=:privacySetting, `date`=:date";
-        $result = $connection2->prepare($sql);
-        $result->execute($data);
-        $issueID = $connection2->lastInsertId();
-    } catch(PDOException $e) {
-        $URL .="&return=error2";
+    if (isset($_GET["technicianID"])) {
+        $technicianID = $_GET["technicianID"];
+    } else {
+        $URL .= "helpDesk_manageTechnicians.php&return=error1" ;
         header("Location: {$URL}");
         exit();
     }
 
-    $URL .="&return=success0&issueID=$issueID";
+    if (isset($_POST["techGroupID"])) {
+        $groupID = $_POST["techGroupID"];
+    } else {
+        $URL .= "helpDesk_editTechnicians.php&technicianID=". $technicianID . "&return=error1" ;
+        header("Location: {$URL}");
+        exit();
+    }
+
+    if (!technicianExists($connection2, $technicianID)) {
+        $URL .= "helpDesk_manageTechnicians.php&return=error1" ;
+        header("Location: {$URL}");
+        exit();
+    }
+
+    if (getTechnicianGroup($connection2, $groupID) == null) {
+        $URL .= "helpDesk_editTechnicians.php&technicianID=". $technicianID . "&return=error1" ;
+        header("Location: {$URL}");
+        exit();
+    }
+
+    try {
+        $data = array("technicianID" => $technicianID, "groupID" => $groupID);
+        $sql = "UPDATE helpDeskTechnicians SET groupID=:groupID WHERE technicianID=:technicianID";
+        $result = $connection2->prepare($sql);
+        $result->execute($data);
+    } catch(PDOException $e) {
+        $URL .= "helpDesk_editTechnicians.php&technicianID=" . $technicianID . "&return=error2";
+        header("Location: {$URL}");
+        exit();
+    }
+
+    $URL .="helpDesk_manageTechnicians.php&return=success0";
     header("Location: {$URL}");
     exit();
 }

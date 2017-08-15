@@ -20,29 +20,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //-Technician Functions-
 
 /*
-Description: This function returns the technicianIDs, gibbonPersonIDs and groupIDs of all Technicians.
-Arguments:
-    A PDO connection.
-Returns:
-    A PDO result: If there are Technicians and no database errors occured.
-    null: If there are no Technicians or a database error occured.
-*/
-function getAllTechnicians($connection2)
-{
-    try {
-        $sql = "SELECT technicianID, gibbonPersonID, groupID FROM helpDeskTechnicians";
-        $result = $connection2->prepare($sql);
-        $result->execute();
-        if ($result->rowCount() > 0) {
-            return $result;
-        }
-    } catch (PDOException $e) {
-    }
-
-    return null;
-}
-
-/*
 Description: This function returns the technicianID and groupID of a Technician with the inputed gibbonPersonID.
 Arguments:
     A PDO connection.

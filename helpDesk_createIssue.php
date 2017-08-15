@@ -46,7 +46,7 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_create
         $techGroup = getTechnicianGroup($connection2, $technician['groupID']);
     }
 
-    $form = Form::create('issueFilters', $_SESSION[$guid]["absoluteURL"] . "/index.php?q=" . $_GET["q"]);
+    $form = Form::create('issueFilters', $_SESSION[$guid]["absoluteURL"] . "/modules/Help Desk/helpDesk_createIssueProcess.php");
 
     $row = $form->addRow();
         $row->addLabel("issueNameLabel", "Issue Name *");
@@ -71,7 +71,7 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_create
     }   
     $priorities = array();
     $priorityName = null;
-    $renderPriority = (($priorityName = getHelpDeskSetting($connection2, "issuePriorityName")) != null);
+    $renderPriority = (($priorityName = getHelpDeskSetting($connection2, "issuePriorityName")) != "");
 
     if (($priorities = getHelpDeskSetting($connection2, "issuePriority")) != null && $renderPriority) {
         $renderPriority = count($priorities) > 1;
@@ -115,37 +115,3 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_create
     print $form->getOutput();
 
 }
-?>
-
-<!-- <form method="post" action="<?php print $_SESSION[$guid]["absoluteURL"] . "/modules/Help Desk/helpDesk_createIssueProcess.php" ?>">
-            <table class='smallIntBorder' cellspacing='0' style="width: 100%">
-                <tr>
-                    <td>
-                        <b>
-                            <?php print __($guid, "Issue Name") . " *"; ?>
-                        </b>
-                        <br/>
-                        <span style='font-size: 90%'>
-                            <i>
-                            <?php
-                                print __($guid, "Maximum 55 characters.");
-                            ?>
-                            </i>
-                        </span>
-                    </td>
-                    <td class="right">
-                        <input name="name" id="name" maxlength=55 value="" type="text" style="width: 300px">
-                        <script type="text/javascript">
-                            var name2 = new LiveValidation('name');
-                            name2.add(Validate.Presence);
-                            name2.add(Validate.Length, { minimum: 2, maximum: 55 });
-                        </script>
-                    </td>
-                </tr>
-                <tr>
-                    <td class='right' colspan=2>
-                        <input type='submit' value='<?php print __($guid, 'Go'); ?>'/>
-                    </td>
-                </tr>
-            </table>
-        </form>  --> 

@@ -62,9 +62,9 @@ $moduleTables[2] = "CREATE TABLE `helpDeskIssueDiscuss` (
 
 $moduleTables[3] = "INSERT INTO `gibbonSetting` (`gibbonSettingID`, `scope`, `name`, `nameDisplay`, `description`, `value`)
 VALUES
-(NULL, 'Help Desk', 'issuePriority', 'Issue Priority', 'Different priority levels for the issues.', ''),
-(NULL, 'Help Desk', 'issuePriorityName', 'Issue Priority Name', 'Different name for the Issue Priority', 'Priority'),
-(NULL, 'Help Desk', 'issueCategory', 'Issue Category', 'Different categories for the issues.', 'Network,Hardware,Software,Application'),
+(NULL, 'Help Desk', 'issuePriority', 'Issue Priority', 'Different priority levels for the issues. Leave this empty to diable Issue Priority.', ''),
+(NULL, 'Help Desk', 'issuePriorityName', 'Issue Priority Name', 'Different name for the Issue Priority. Leave this empty to diable Issue Priority.', 'Priority'),
+(NULL, 'Help Desk', 'issueCategory', 'Issue Category', 'Different categories for the issues. Leave this empty to diable Issue Category.', 'Network,Hardware,Software,Application'),
 (NULL, 'Help Desk', 'resolvedIssuePrivacy', 'Default Resolved Issue Privacy', 'Default privacy setting for resolved issues.', 'Related')";
 
 $moduleTables[4] = "CREATE TABLE `helpDeskTechGroups` (

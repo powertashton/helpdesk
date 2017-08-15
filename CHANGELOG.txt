@@ -240,3 +240,4 @@ Fixed an issue where helpDesk_statisticsDetail.php would default the title to th
 
 v2.0.00
 -------
+Rebuilt all features from scratch, following new gibbon standards

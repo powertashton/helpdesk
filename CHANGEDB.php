@@ -219,5 +219,8 @@ $sql[$count++][1] = "
 UPDATE gibbonAction SET URLList='helpDesk_issues.php', entryURL='helpDesk_issues.php' WHERE name='Issues' AND gibbonModuleID=(SELECT gibbonModuleID FROM gibbonModule WHERE name='Help Desk');end
 UPDATE gibbonAction SET URLList='helpDesk_createIssue.php', entryURL='helpDesk_createIssue.php' WHERE name='Create Issue' AND gibbonModuleID=(SELECT gibbonModuleID FROM gibbonModule WHERE name='Help Desk');end
 UPDATE gibbonModule SET entryURL='helpDesk_issues.php' WHERE name='Help Desk';end
+UPDATE gibbonSetting SET description='Different priority levels for the issues. Leave this empty to diable Issue Priority.' WHERE name='issuePriority' AND scope='Help Desk';end
+UPDATE gibbonSetting SET description='Different name for the Issue Priority. Leave this empty to diable Issue Priority.' WHERE name='issuePriorityName' AND scope='Help Desk';end
+UPDATE gibbonSetting SET description='Different categories for the issues. Leave this empty to diable Issue Category.' WHERE name='issueCategory' AND scope='Help Desk';end
 ";
 ?>

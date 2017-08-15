@@ -33,43 +33,43 @@ date_default_timezone_set($_SESSION[$guid]["timezone"]);
 
 $URL = $_SESSION[$guid]["absoluteURL"] . "/index.php?q=/modules/Help Desk/" ;
 
-if (isActionAccessible($guid, $connection2, "/modules/Help Desk/helpDesk_createIssue.php") == FALSE) {
+if (isActionAccessible($guid, $connection2, "/modules/Help Desk/helpDesk_manageTechnicians.php") == FALSE) {
     //Fail 0
     $URL .= "helpDesk_manage.php&return=error0" ;
     header("Location: {$URL}");
 } else {
-    $URL .= "helpDesk_createIssue.php";
+    $URL .= "helpDesk_createTechnician.php";
 
-    $data = array("gibbonPersonID" => $_SESSION[$guid]["gibbonPersonID"], "gibbonSchoolYearID" => $_SESSION[$guid]["gibbonSchoolYearID"], "date" => date("Y-m-d"), "createdByID" => $_SESSION[$guid]["gibbonPersonID"]);
-    $formData = array("issueName" => true, "description"=>true, "category" => false, "priority" => false, "createFor" => false, "privacySetting" => true);
+    if (isset($_POST["techPersonID"])) {
+        $gibbonPersonID = $_POST["techPersonID"];
+    } else {
+        $URL .= "&return=error1" ;
+        header("Location: {$URL}");
+        exit();
+    }
 
-    foreach ($formData as $key => $value) {
-        if (isset($_POST[$key]) && trim($_POST[$key])!=="") {
-            if($key == "createFor") {
-                $data["createdByID"] = $data["gibbonPersonID"];
-                $data["gibbonPersonID"] = trim($_POST[$zkey]);
-            } else {
-                $data[$key] = trim($_POST[$key]);
-            }
-        } else if($value) {
-            $URL .= "&return=error1";
-            header("Location: {$URL}");
-            exit();
-        }
+    if (isset($_POST["techGroupID"])) {
+        $groupID = $_POST["techGroupID"];
+    } else {
+        $URL .= "&return=error1" ;
+        header("Location: {$URL}");
+        exit();
     }
 
     try {
-        $sql = "INSERT INTO helpDeskIssue SET gibbonPersonID=:gibbonPersonID, issueName=:issueName, description=:description, category=:category, priority=:priority, gibbonSchoolYearID=:gibbonSchoolYearID, createdByID=:createdByID, privacySetting=:privacySetting, `date`=:date";
+        $data = array("gibbonPersonID" => $gibbonPersonID, "groupID" => $groupID);
+        $sql = "INSERT INTO helpDeskTechnicians SET gibbonPersonID=:gibbonPersonID, groupID=:groupID";
         $result = $connection2->prepare($sql);
         $result->execute($data);
-        $issueID = $connection2->lastInsertId();
+        $technicianID = $connection2->lastInsertId();
     } catch(PDOException $e) {
+        print $e;
         $URL .="&return=error2";
         header("Location: {$URL}");
         exit();
     }
 
-    $URL .="&return=success0&issueID=$issueID";
+    $URL .="&return=success0&technicianID=$technicianID";
     header("Location: {$URL}");
     exit();
 }
