@@ -24,7 +24,7 @@ require_once '../../gibbon.php';
 
 require_once './moduleFunctions.php';
 
-$URL = $gibbon->session->get('absoluteURL') . '/index.php?q=/modules/' . $gibbon->session->get('module') . '/helpDesk_createTechnician.php';
+$URL = $gibbon->session->get('absoluteURL') . '/index.php?q=/modules/' . $gibbon->session->get('module') . '/helpDesk_manageTechnicians.php';
 
 if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_manageTechnicians.php')) {
     $URL .= '&return=error0';
@@ -73,7 +73,7 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/helpDesk_manage
         setLog($connection2, $gibbon->session->get('gibbonSchoolYearID'), $gibbonModuleID, $gibbon->session->get('gibbonPersonID'), 'Technician Added', $array, null);
 
         //Success 0
-        $URL .= '&return=success0';
+        $URL .= "&technicianID=$technicianID&return=success0";
         header("Location: {$URL}");
         exit();
     }
