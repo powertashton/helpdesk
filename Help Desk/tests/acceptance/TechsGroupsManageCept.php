@@ -1,6 +1,6 @@
 <?php
 $I = new AcceptanceTester($scenario);
-$I->wantTo('Create and Edit a Technician Group');
+$I->wantTo('add, edit and delete technician technician groups');
 $I->loginAsAdmin();
 $I->amOnModulePage('Help Desk', 'helpDesk_manageTechnicianGroup.php');
 
@@ -8,34 +8,35 @@ $I->amOnModulePage('Help Desk', 'helpDesk_manageTechnicianGroup.php');
 $I->clickNavigation('Add');
 $I->seeBreadcrumb('Create Technician Group');
 
+
 $I->fillField('groupName', 'Test Group');
 $I->click('Submit');
 
 $I->seeSuccessMessage();
 
-$groupID = $I->grabValueFromURL('groupID');
+
+$groupID = $I->grabEditIDFromURL();
 
 // Edit ------------------------------------------------
 $I->amOnModulePage('Help Desk', 'helpDesk_editTechnicianGroup.php', array('groupID' => $groupID));
 $I->seeBreadcrumb('Edit Technician Group');
 
 $I->seeInField('groupName', 'Test Group');
-$I->seeInField('viewIssue', '1');
-$I->seeInField('assignIssue', '');
-$I->seeInField('acceptIssue', '1');
-$I->seeInField('resolveIssue', '1');
-$I->seeInField('createIssueForOther', '1');
-$I->seeInField('reassignIssue', '');
-$I->seeInField('reincarnateIssue', '1');
-$I->seeInField('fullAccess', '');
+$I->seeInField('viewIssue', 'Y');
+$I->seeInField('assignIssue', 'N');
+$I->seeInField('acceptIssue', 'Y');
+$I->seeInField('resolveIssue', 'Y');
+$I->seeInField('createIssueForOther', 'Y');
+$I->seeInField('reassignIssue', 'N');
+$I->seeInField('reincarnateIssue', 'N');
+$I->seeInField('fullAccess', 'N');
 
 $I->selectFromDropdown('viewIssueStatus', 1);
 $I->click('Submit');
 $I->seeSuccessMessage();
 
 // Delete ------------------------------------------------
-//TODO: IDK, seems hard to test for when the delete is a modal window
-// $I->amOnModulePage('Help Desk', 'helpDesk_technicianGroupDelete.php', array('groupID' => $groupID));
-// 
-// $I->click('Submit');
-// $I->seeSuccessMessage();
+$I->amOnModulePage('Help Desk', 'helpDesk_technicianGroupDelete.php', array('groupID' => $groupID));
+
+$I->click('Yes');
+$I->seeSuccessMessage();
